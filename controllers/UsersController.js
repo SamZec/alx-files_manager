@@ -19,6 +19,6 @@ module.exports = class UserController {
       .update(req.body.password)
       .digest('hex');
     const user = await dbClient.addUser(email, password);
-    res.status(200).json({id: user.ops[0]._id, email: user.ops[0].email}).end();
+    return res.status(201).json({id: user.ops[0]._id, email: user.ops[0].email}).end();
   }
 };
