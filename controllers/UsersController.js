@@ -1,5 +1,6 @@
 import { app } from '../server';
 import { dbClient } from '../utils/db';
+import { redisClient } from '../utils/redis';
 const crypto = require('crypto');
 
 module.exports = class UserController {
@@ -20,5 +21,18 @@ module.exports = class UserController {
       .digest('hex');
     const user = await dbClient.addUser(email, password);
     return res.status(201).json({id: user.ops[0]._id, email: user.ops[0].email}).end();
+  }
+
+  static async getMe(req, res) {
+    if (req.headers['x-token'] === undefined) {
+      return res.status(401).json({error: 'Unauthorized'});
+    }
+    const token = req.headers['x-token']
+    const userId = await redisClient.get(`auth_${token}`);
+    const user = await dbClient.findUser(userId);
+    if (user === null) {
+      return res.status(401).json({error: 'Unauthorized'});
+    }
+    return res.status(200).json({id: user._id, email: user.email}).end();
   }
 };
