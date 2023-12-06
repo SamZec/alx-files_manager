@@ -14,7 +14,6 @@ class RedisClient {
     });
   }
 
-
   isAlive() {
     return this.isConnected;
   }
