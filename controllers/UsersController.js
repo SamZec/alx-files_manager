@@ -1,4 +1,4 @@
-import { app } from '../server';
+//import { app } from '../server';
 import { dbClient } from '../utils/db';
 import { redisClient } from '../utils/redis';
 const crypto = require('crypto');
