@@ -11,10 +11,11 @@ module.exports = class UserController {
     if (!header) {
       return res.status(401).json({ error: 'Unauthorized' }).end();
     }
-    const Auth = new Buffer.From(header.split(' ')[1], 'base64')
+    /* eslint-disable */
+    const auth = new Buffer.from(header.split(' ')[1], 'base64')
       .toString().split(':');
-    const password = crypto.createHash('sha1').update(Auth[1]).digest('hex');
-    const user = await dbClient.checkEmail(Auth[0]);
+    const password = crypto.createHash('sha1').update(auth[1]).digest('hex');
+    const user = await dbClient.checkEmail(auth[0]);
     if (user.password !== password) {
       return res.status(401).json({ error: 'Unauthorized' }).end();
     }
