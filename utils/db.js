@@ -38,6 +38,28 @@ class DBClient {
     const col = this.client.db().collection('users');
     return col.findOne({ _id: ObjectId(id) });
   }
+
+  async newFile(userId, name, type, isPublic, parentId, data) {
+    const col = this.client.db().collection('files');
+    const file = col.insertOne({
+      userId, name, type, isPublic, parentId, data,
+    });
+    return file;
+  }
+
+  async filterFiles(filters) {
+    const col = this.client.db().collection('files');
+    const idFilters = ['_id', 'userId', 'parentId'].filter((prop) => prop in filters && filters[prop] !== '0');
+    idFilters.forEach((i) => {
+      // eslint-disable-next-line no-param-reassign
+      filters[i] = ObjectId(filters[i]);
+    });
+    return col.findOne(filters);
+  }
+
+  async filesCollection() {
+    return this.client.db().collection('files');
+  }
 }
 
 export const dbClient = new DBClient();
