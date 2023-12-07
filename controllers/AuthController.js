@@ -14,8 +14,14 @@ module.exports = class UserController {
     /* eslint-disable */
     const auth = new Buffer.from(header.split(' ')[1], 'base64')
       .toString().split(':');
+    if (auth[1] === undefined) {
+       return res.status(401).json({ error: 'Unauthorized' }).end();
+    }
     const password = crypto.createHash('sha1').update(auth[1]).digest('hex');
     const user = await dbClient.checkEmail(auth[0]);
+    if (user === null) {
+      return res.status(401).json({ error: 'Unauthorized' }).end();
+    }
     if (user.password !== password) {
       return res.status(401).json({ error: 'Unauthorized' }).end();
     }
