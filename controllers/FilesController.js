@@ -185,39 +185,42 @@ export default class FilesController {
       return res.status(401).json({ error: 'Unauthorized' }).end();
     }
     const filesFilter = {
-      userId,
+      userId: new mongoDBCore.BSON.ObjectId(userId),
       parentId: parentId === ROOT_FOLDER_ID.toString()
         ? parentId
         : new mongoDBCore.BSON.ObjectId(isValidId(parentId) ? parentId : NULL_ID),
     };
 
-    const files = await (await (await dbClient.filesCollection())
-      .aggregate([
-        { $match: filesFilter },
-        { $sort: { _id: -1 } },
-        { $skip: page * MAX_FILES_PER_PAGE },
-        { $limit: MAX_FILES_PER_PAGE },
-        {
-          $project: {
-            _id: 0,
-            id: '$_id',
-            userId: '$userId',
-            name: '$name',
-            type: '$type',
-            isPublic: '$isPublic',
-            parentId: {
-              $cond: { if: { $eq: ['$parentId', '0'] }, then: 0, else: '$parentId' },
-            },
+    const col = await dbClient.filesCollection();
+    const files = await col.aggregate([
+      { $match: filesFilter },
+      { $sort: { _id: -1 } },
+      { $skip: page * MAX_FILES_PER_PAGE },
+      { $limit: MAX_FILES_PER_PAGE },
+      {
+        $project: {
+          _id: 0,
+          id: '$_id',
+          userId: '$userId',
+          name: '$name',
+          type: '$type',
+          isPublic: '$isPublic',
+          parentId: {
+            $cond: { if: { $eq: ['$parentId', '0'] }, then: 0, else: '$parentId' },
           },
         },
-      ])).toArray();
+      },
+    ]).toArray();
     return res.status(200).json(files);
   }
 
   static async putPublish(req, res) {
     const { user } = req;
     const { id } = req.params;
-    const userId = user._id.toString();
+    const userId = await FilesController.getUserFromXToken(req);
+    if (userId === null) {
+      return res.status(401).json({ error: 'Unauthorized' }).end();
+    }
     const fileFilter = {
       _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
       userId: new mongoDBCore.BSON.ObjectId(isValidId(userId) ? userId : NULL_ID),
@@ -226,12 +229,11 @@ export default class FilesController {
       .findOne(fileFilter);
 
     if (!file) {
-      res.status(404).json({ error: 'Not found' });
-      return;
+      return res.status(404).json({ error: 'Not found' });
     }
     await (await dbClient.filesCollection())
       .updateOne(fileFilter, { $set: { isPublic: true } });
-    res.status(200).json({
+    return res.status(200).json({
       id,
       userId,
       name: file.name,
@@ -246,7 +248,10 @@ export default class FilesController {
   static async putUnpublish(req, res) {
     const { user } = req;
     const { id } = req.params;
-    const userId = user._id.toString();
+    const userId = await FilesController.getUserFromXToken(req);
+    if (userId === null) {
+      return res.status(401).json({ error: 'Unauthorized' }).end();
+    }
     const fileFilter = {
       _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
       userId: new mongoDBCore.BSON.ObjectId(isValidId(userId) ? userId : NULL_ID),
@@ -255,12 +260,11 @@ export default class FilesController {
       .findOne(fileFilter);
 
     if (!file) {
-      res.status(404).json({ error: 'Not found' });
-      return;
+      return res.status(404).json({ error: 'Not found' });
     }
     await (await dbClient.filesCollection())
       .updateOne(fileFilter, { $set: { isPublic: false } });
-    res.status(200).json({
+    return res.status(200).json({
       id,
       userId,
       name: file.name,
@@ -273,10 +277,14 @@ export default class FilesController {
   }
 
   static async getFile(req, res) {
-    const user = await FilesController.getUserFromXToken(req);
+    const userId = await FilesController.getUserFromXToken(req);
+    if (userId === null) {
+      res.status(401).json({ error: 'Unauthorized' }).end();
+      return;
+    }
     const { id } = req.params;
     const size = req.query.size || null;
-    const userId = user ? user._id.toString() : '';
+    // const userId = user ? user._id.toString() : '';
     const fileFilter = {
       _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
     };
