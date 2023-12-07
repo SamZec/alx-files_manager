@@ -278,10 +278,6 @@ export default class FilesController {
 
   static async getFile(req, res) {
     const userId = await FilesController.getUserFromXToken(req);
-    if (userId === null) {
-      res.status(401).json({ error: 'Unauthorized' }).end();
-      return;
-    }
     const { id } = req.params;
     const size = req.query.size || null;
     // const userId = user ? user._id.toString() : '';

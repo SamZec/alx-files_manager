@@ -16,5 +16,8 @@ Routes.get('/users/me', UsersController.getMe);
 Routes.post('/files', FilesController.postUpload);
 Routes.get('/files/:id', FilesController.getShow);
 Routes.get('/files', FilesController.getIndex);
+Routes.put('/files/:id/publish', FilesController.putPublish);
+Routes.put('/files/:id/unpublish', FilesController.putUnpublish);
+Routes.get('/files/:id/data', FilesController.getFile);
 
 module.exports = Routes;
